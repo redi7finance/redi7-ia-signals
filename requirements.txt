@@ -1,0 +1,24 @@
+# REDI7 AI v1.0 - Dependencias
+
+# API de OpenAI
+openai>=1.12.0
+
+# Utilidades
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Manejo de fechas y tiempos
+pytz>=2024.1
+
+# Análisis de imágenes
+pillow>=10.2.0
+
+# Interface gráfica
+streamlit>=1.31.0
+
+# Base de datos (futuro)
+# sqlalchemy>=2.0.25
+
+# Exportación de reportes (futuro)
+# reportlab>=4.0.9
+# pandas>=2.2.0
