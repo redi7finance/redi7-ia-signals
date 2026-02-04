@@ -78,6 +78,7 @@ class AuthSystem:
         self._ensure_columns()
         self._ensure_referral_codes()
         self._crear_admin_inicial()
+        self._promover_usuarios_admin()
     
     def _crear_admin_inicial(self):
         """Crea usuario admin si no existe (desde Streamlit secrets o valores por defecto)"""
@@ -118,6 +119,37 @@ class AuthSystem:
                 # Ya existe, ignorar
                 pass
         
+        conn.close()
+    
+    def _promover_usuarios_admin(self):
+        """Promueve usuarios específicos a admin automáticamente"""
+        import os
+        
+        # Lista de usuarios que deben ser admin
+        try:
+            import streamlit as st
+            admin_users = st.secrets.get("ADMIN_USERS", "redi7,admin").split(",")
+        except:
+            admin_users = os.getenv("ADMIN_USERS", "redi7,admin").split(",")
+        
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        for username in admin_users:
+            username = username.strip()
+            if username:
+                try:
+                    cursor.execute("""
+                        UPDATE usuarios 
+                        SET is_admin = 1, plan = 'elite' 
+                        WHERE username = ? AND is_admin = 0
+                    """, (username,))
+                    if cursor.rowcount > 0:
+                        print(f"✅ Usuario {username} promovido a admin")
+                except Exception as e:
+                    print(f"⚠️ Error promoviendo {username}: {e}")
+        
+        conn.commit()
         conn.close()
 
     def _ensure_columns(self):
