@@ -77,6 +77,48 @@ class AuthSystem:
 
         self._ensure_columns()
         self._ensure_referral_codes()
+        self._crear_admin_inicial()
+    
+    def _crear_admin_inicial(self):
+        """Crea usuario admin si no existe (desde Streamlit secrets o valores por defecto)"""
+        import os
+        
+        # Intentar obtener desde Streamlit secrets primero
+        try:
+            import streamlit as st
+            admin_username = st.secrets.get("ADMIN_USERNAME", "admin_redi7")
+            admin_email = st.secrets.get("ADMIN_EMAIL", "admin@redi7.com")
+            admin_password = st.secrets.get("ADMIN_PASSWORD", "Redi7Admin2026!")
+        except:
+            # Fallback a variables de entorno o valores por defecto
+            admin_username = os.getenv("ADMIN_USERNAME", "admin_redi7")
+            admin_email = os.getenv("ADMIN_EMAIL", "admin@redi7.com")
+            admin_password = os.getenv("ADMIN_PASSWORD", "Redi7Admin2026!")
+        
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Verificar si ya existe un admin
+        cursor.execute("SELECT id FROM usuarios WHERE is_admin = 1")
+        if cursor.fetchone() is None:
+            # No hay admin, crear uno
+            password_hash = self._hash_password(admin_password)
+            referral_code = self._generate_referral_code(admin_username)
+            
+            try:
+                cursor.execute("""
+                    INSERT INTO usuarios (username, email, password_hash, nombre_completo, 
+                                        plan, is_admin, referral_code, whatsapp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (admin_username, admin_email, password_hash, "Administrador REDI7", 
+                      "elite", 1, referral_code, "+51000000000"))
+                conn.commit()
+                print(f"✅ Usuario admin creado: {admin_username}")
+            except sqlite3.IntegrityError:
+                # Ya existe, ignorar
+                pass
+        
+        conn.close()
 
     def _ensure_columns(self):
         """Asegura que existan las columnas necesarias en la tabla usuarios"""
