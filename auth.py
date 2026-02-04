@@ -128,9 +128,9 @@ class AuthSystem:
         # Lista de usuarios que deben ser admin
         try:
             import streamlit as st
-            admin_users = st.secrets.get("ADMIN_USERS", "redi7,admin").split(",")
+            admin_users = st.secrets.get("ADMIN_USERS", "REDI7,admin").split(",")
         except:
-            admin_users = os.getenv("ADMIN_USERS", "redi7,admin").split(",")
+            admin_users = os.getenv("ADMIN_USERS", "REDI7,admin").split(",")
         
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
