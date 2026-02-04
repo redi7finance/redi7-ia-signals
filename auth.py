@@ -337,6 +337,25 @@ class AuthSystem:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            # Verificar y promover a admin si corresponde
+            import os
+            try:
+                import streamlit as st
+                admin_users = st.secrets.get("ADMIN_USERS", "REDI7").split(",")
+            except:
+                admin_users = os.getenv("ADMIN_USERS", "REDI7").split(",")
+            
+            admin_users = [u.strip() for u in admin_users if u.strip()]
+            
+            # Si el usuario está en la lista de admins, actualizarlo
+            if username in admin_users:
+                cursor.execute("""
+                    UPDATE usuarios 
+                    SET is_admin = 1, plan = 'elite' 
+                    WHERE username = ? AND is_admin = 0
+                """, (username,))
+                conn.commit()
+            
             password_hash = self._hash_password(password)
             
             cursor.execute("""
