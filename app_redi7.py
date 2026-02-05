@@ -638,6 +638,9 @@ def main():
 
         st.markdown("---")
         if st.button("🚪 Salir", width='stretch'):
+            # Limpiar TODA la sesión
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
             st.session_state.logged_in = False
             st.session_state.user_data = None
             st.rerun()
@@ -1039,125 +1042,18 @@ def main():
                                 if rr_prom_match:
                                     st.metric("📈 R:R Promedio", rr_prom_match.group(1))
 
-                        # Guardar análisis en session_state para Telegram
-                        st.session_state['ultimo_analisis'] = {
-                            'activo': activo,
-                            'modo': modo_operacion,
-                            'analisis_principal': analisis_principal,
-                            'timestamp': resultado['timestamp']
-                        }
-
                         # Timestamp
                         st.caption(f"🕐 Generado: {resultado['timestamp']}")
 
-                        # Botones de acción
+                        # Botón de acción
                         st.markdown("---")
-                        col_btn_nuevo, col_btn_tg = st.columns(2)
-                        
-                        with col_btn_nuevo:
-                            # Botón para analizar de nuevo
-                            if st.button("🔄 Analizar de Nuevo", width='stretch', key="btn_nuevo_analisis", use_container_width=True):
-                                st.rerun()
-                        
-                        with col_btn_tg:
-                            # Botón para enviar a Telegram con callback
-                            if st.button("📱 Enviar a Telegram", type="primary", width='stretch', key="btn_telegram", use_container_width=True):
-                                # Obtener datos del último análisis
-                                if 'ultimo_analisis' in st.session_state:
-                                    datos = st.session_state['ultimo_analisis']
-                                    
-                                    # Obtener configuración de Telegram
-                                    telegram_config = st.session_state.auth.obtener_telegram_config(
-                                        st.session_state.user_data['id']
-                                    )
-                                    
-                                    if not telegram_config['configurado']:
-                                        st.error("⚠️ Configura tu bot de Telegram en el menú lateral primero")
-                                    else:
-                                        try:
-                                            from telegram_sender import TelegramSender
-                                            
-                                            # Crear sender
-                                            telegram_sender = TelegramSender(
-                                                bot_token=telegram_config['bot_token'],
-                                                chat_id=telegram_config['chat_id']
-                                            )
-                                            
-                                            # Preparar mensaje desde session_state
-                                            mensaje = f"🚀 SEÑAL REDI7 AI\n\n📊 Activo: {datos['activo']}\n⚡ Modo: {datos['modo']}\n\n{datos['analisis_principal']}"
-                                            
-                                            # Enviar
-                                            resultado_tg = telegram_sender.enviar_mensaje(mensaje, parse_mode=None)
-                                            
-                                            if resultado_tg["exito"]:
-                                                st.success("✅ Señal enviada a Telegram exitosamente")
-                                                st.balloons()
-                                            else:
-                                                st.error(f"❌ Error: {resultado_tg.get('mensaje', 'Error desconocido')}")
-                                        
-                                        except Exception as e:
-                                            st.error(f"❌ Error al enviar: {str(e)}")
-                                else:
-                                    st.error("❌ No hay análisis para enviar")
+                        # Botón para analizar de nuevo (centrado)
+                        if st.button("🔄 Analizar de Nuevo", type="primary", use_container_width=True, key="btn_nuevo_analisis"):
+                            st.rerun()
                     
                 except Exception as e:
                     st.error(f"❌ Error durante el análisis: {str(e)}")
                     st.exception(e)
-        
-        # MOSTRAR RESULTADO SIEMPRE SI EXISTE EN SESSION STATE (FUERA del bloque if analizar)
-        # Esto mantiene el análisis visible incluso después de presionar otros botones
-        if 'resultado_actual' in st.session_state:
-            res = st.session_state['resultado_actual']
-            
-            # Header del resultado
-            st.success("✅ **Análisis completado exitosamente**")
-
-            # Verificar si es admin desde user_data
-            es_admin = st.session_state.user_data.get('is_admin', 0) == 1
-            
-            # Métricas superiores
-            if es_admin:
-                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            else:
-                col_m1, col_m2, col_m3 = st.columns(3)
-            
-            with col_m1:
-                st.metric("📊 Activo", res['activo'])
-            with col_m2:
-                st.metric("⚡ Modo", res['modo'])
-            with col_m3:
-                st.metric("⏰ Hora", res['horario'])
-            if es_admin:
-                with col_m4:
-                    st.metric("🔢 Tokens", f"{res['tokens']}")
-
-            # Resultado del análisis
-            st.markdown("---")
-            st.markdown("### 📋 Análisis Institucional REDI7 AI")
-
-            analisis_text = res['analisis_completo']
-            
-            # Separar análisis de gestión de riesgo si existe
-            if "📉GESTIÓN DE RIESGO REDI7📉" in analisis_text:
-                partes = analisis_text.split("📉GESTIÓN DE RIESGO REDI7📉")
-                analisis_principal = partes[0].strip()
-            else:
-                analisis_principal = analisis_text
-
-            # Mostrar el análisis principal
-            st.markdown('<div class="resultado-box">', unsafe_allow_html=True)
-            analisis_formatted = analisis_principal.replace('\n', '  \n')
-            st.markdown(analisis_formatted)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Timestamp
-            st.caption(f"🕐 Generado: {res['timestamp']}")
-
-            # Botón de acción - Solo "Analizar de Nuevo"
-            st.markdown("---")
-            if st.button("🔄 Analizar de Nuevo", width='stretch', key="btn_nuevo_analisis_final", use_container_width=True):
-                del st.session_state['resultado_actual']
-                st.rerun()
     
         # Footer
         st.markdown("---")

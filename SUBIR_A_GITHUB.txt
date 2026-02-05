@@ -1,70 +1,51 @@
 ═══════════════════════════════════════════════════════════════════
-  INSTRUCCIONES PARA SUBIR CAMBIOS A GITHUB
+  ACTUALIZACIÓN FINAL - LIMPIEZA DE CÓDIGO OBSOLETO
 ═══════════════════════════════════════════════════════════════════
 
-CAMBIOS REALIZADOS:
-✅ Agregado método _safe_close_cursor() para cerrar cursores MySQL de forma segura
-✅ Todos los cursor.close() reemplazados por self._safe_close_cursor(cursor)
-✅ Campo is_admin agregado al SELECT y retornado en user_data del login
-✅ Eliminado UPDATE ... WHERE is_admin = 0 para siempre actualizar admin
-✅ Agregado print de confirmación cuando se promueve a admin
-✅ Verificación de admin desde user_data en lugar de consultas SQLite
-✅ Eliminado import sqlite3 y todas las referencias a redi7_users.db
-✅ Agregado método registrar_analisis() para guardar historial en MySQL
+CAMBIOS EN ESTA ACTUALIZACIÓN:
+✅ Eliminado botón manual "📱 Enviar a Telegram" (obsoleto)
+✅ Eliminada variable st.session_state['ultimo_analisis'] (no usada)
+✅ Eliminado código duplicado de visualización de resultados
+✅ Limpiado código de versión anterior mezclado con nueva
 
-PROBLEMAS SOLUCIONADOS:
-🔧 Error "Unread result found" de MySQL eliminado completamente
-🔧 Usuario REDI7 ahora aparece como admin correctamente
-🔧 Sesión persiste al recargar la página (user_data incluye is_admin)
-🔧 Historial de análisis guardado en MySQL en lugar de SQLite
+FUNCIONAMIENTO CORRECTO:
+✅ Telegram envía AUTOMÁTICAMENTE después de cada análisis
+✅ Solo aparece botón "🔄 Analizar de Nuevo" después del resultado
+✅ Sin botones duplicados o código obsoleto
+✅ Interfaz limpia y funcional
 
 ═══════════════════════════════════════════════════════════════════
 
 ARCHIVOS MODIFICADOS:
-📄 auth.py - Sistema de autenticación con MySQL y admin persistente
-📄 app_redi7.py - Verificación de admin desde sesión y sin SQLite
+📄 app_redi7.py - Limpieza código obsoleto Telegram
+📄 admin_panel.py - Migración MySQL completa
+📄 auth.py - Sistema autenticación MySQL
 
 ═══════════════════════════════════════════════════════════════════
 
-OPCIÓN 1 - VS CODE (MÁS FÁCIL):
-════════════════════════════════
+PARA SUBIR A GITHUB:
+════════════════════════
 
-1. Abre VS Code en la carpeta: redi7-ia-signals
-
-2. Presiona: Ctrl + Shift + G (Source Control)
-
-3. Verás: auth.py y app_redi7.py (modificados)
-
-4. Mensaje: "Fix: Admin persistente y sesión MySQL completa"
-
-5. Click en: ✓ Commit
-
-6. Click en: ↑↓ Sync Changes
-
-═══════════════════════════════════════════════════════════════════
+OPCIÓN 1 - VS CODE:
+1. Ctrl + Shift + G
+2. Commit: "Fix: Eliminar código obsoleto Telegram y duplicados"
+3. Sync Changes
 
 OPCIÓN 2 - GITHUB DESKTOP:
-═════════════════════════════
-
 1. Abre GitHub Desktop
-
-2. Verás auth.py y app_redi7.py en Changes
-
-3. Commit message: "Fix: Admin persistente y sesión MySQL completa"
-
-4. Click: Commit to main
-
-5. Click: Push origin
+2. Commit: "Fix: Eliminar código obsoleto Telegram y duplicados"
+3. Push origin
 
 ═══════════════════════════════════════════════════════════════════
 
-RESULTADO ESPERADO:
-═════════════════════
+COMPORTAMIENTO DESPUÉS DEL DESPLIEGUE:
+═══════════════════════════════════════
 
-⏱️  Streamlit Cloud redesplegará automáticamente en ~2 minutos
-✅  Usuario REDI7 verá el botón "👑 Panel Administrador"
-✅  La sesión NO se cerrará al recargar la página
-✅  Datos persistentes en MySQL funcionando completamente
-✅  Sin errores de cursor o conexión
+✅ Análisis → Telegram automático (si configurado)
+✅ Solo botón "🔄 Analizar de Nuevo" visible
+✅ Sin botón manual de Telegram (ya no necesario)
+✅ Panel admin funciona con MySQL
+✅ Sesión limpia al cerrar sesión
+✅ Usuario REDI7 ve panel administrador
 
 ═══════════════════════════════════════════════════════════════════

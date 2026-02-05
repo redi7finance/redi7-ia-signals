@@ -6,35 +6,45 @@ Sistema completo de gestión y monitoreo
 import streamlit as st
 from auth import AuthSystem
 from datetime import datetime, timedelta
-import sqlite3
+import mysql.connector
+from mysql.connector import Error
 
 class AdminPanel:
     """Panel administrativo con estadísticas y gestión"""
     
     def __init__(self):
         self.auth = AuthSystem()
-        self.db_path = "redi7_users.db"
+    
+    def _get_connection(self):
+        """Obtiene conexión MySQL del auth"""
+        return self.auth._get_connection()
     
     def is_admin(self, user_id: int) -> bool:
         """Verifica si el usuario es administrador"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT is_admin FROM usuarios WHERE id = ?", (user_id,))
+        conn = self._get_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor(buffered=True)
+        cursor.execute("SELECT is_admin FROM usuarios WHERE id = %s", (user_id,))
         result = cursor.fetchone()
+        self.auth._safe_close_cursor(cursor)
         conn.close()
         return result and result[0] == 1
     
     def make_admin(self, username: str) -> dict:
         """Convierte un usuario en administrador"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            conn = self._get_connection()
+            if not conn:
+                return {"success": False, "message": "❌ Error de conexión"}
+            cursor = conn.cursor(buffered=True)
             cursor.execute("""
                 UPDATE usuarios 
                 SET is_admin = 1 
-                WHERE username = ?
+                WHERE username = %s
             """, (username,))
             conn.commit()
+            self.auth._safe_close_cursor(cursor)
             conn.close()
             return {"success": True, "message": f"✅ {username} es ahora administrador"}
         except Exception as e:
@@ -42,8 +52,10 @@ class AdminPanel:
     
     def get_dashboard_stats(self) -> dict:
         """Obtiene estadísticas generales del sistema"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        conn = self._get_connection()
+        if not conn:
+            return {}
+        cursor = conn.cursor(buffered=True)
         
         # Total usuarios
         cursor.execute("SELECT COUNT(*) FROM usuarios")
@@ -61,7 +73,7 @@ class AdminPanel:
         hace_7_dias = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         cursor.execute("""
             SELECT COUNT(*) FROM historial_analisis 
-            WHERE fecha >= ?
+            WHERE fecha >= %s
         """, (hace_7_dias,))
         analisis_7_dias = cursor.fetchone()[0]
         
@@ -77,7 +89,7 @@ class AdminPanel:
         # Usuarios activos (últimos 7 días)
         cursor.execute("""
             SELECT COUNT(DISTINCT user_id) FROM historial_analisis 
-            WHERE fecha >= ?
+            WHERE fecha >= %s
         """, (hace_7_dias,))
         usuarios_activos_7d = cursor.fetchone()[0]
         
@@ -85,7 +97,7 @@ class AdminPanel:
         hoy = datetime.now().strftime("%Y-%m-%d")
         cursor.execute("""
             SELECT COUNT(*) FROM historial_analisis 
-            WHERE fecha >= ?
+            WHERE fecha >= %s
         """, (hoy,))
         analisis_hoy = cursor.fetchone()[0]
         
@@ -103,8 +115,8 @@ class AdminPanel:
     
     def get_all_users(self) -> list:
         """Obtiene lista de todos los usuarios"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        conn = self._get_connection()
+        cursor = conn.cursor(buffered=True)
         cursor.execute("""
             SELECT id, username, email, plan, fecha_registro, is_admin, referral_code, referred_by
             FROM usuarios
@@ -116,13 +128,13 @@ class AdminPanel:
     
     def get_user_details(self, user_id: int) -> dict:
         """Obtiene detalles completos de un usuario"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        conn = self._get_connection()
+        cursor = conn.cursor(buffered=True)
         
         # Info usuario
         cursor.execute("""
             SELECT username, email, plan, fecha_registro
-            FROM usuarios WHERE id = ?
+            FROM usuarios WHERE id = %s
         """, (user_id,))
         user_info = cursor.fetchone()
         
@@ -130,7 +142,7 @@ class AdminPanel:
         cursor.execute("""
                  SELECT COUNT(*), 
                      COUNT(CASE WHEN fecha >= date('now', '-7 days') THEN 1 END)
-                 FROM historial_analisis WHERE user_id = ?
+                 FROM historial_analisis WHERE user_id = %s
         """, (user_id,))
         analisis_stats = cursor.fetchone()
         
@@ -138,14 +150,14 @@ class AdminPanel:
         cursor.execute("""
             SELECT fecha, activo, modo, temporalidad
             FROM historial_analisis 
-            WHERE user_id = ?
+            WHERE user_id = %s
             ORDER BY fecha DESC
             LIMIT 10
         """, (user_id,))
         ultimos_analisis = cursor.fetchall()
 
         # Referidos
-        cursor.execute("SELECT COUNT(*) FROM usuarios WHERE referred_by = ?", (user_id,))
+        cursor.execute("SELECT COUNT(*) FROM usuarios WHERE referred_by = %s", (user_id,))
         referidos_count = cursor.fetchone()[0]
         
         conn.close()
@@ -164,12 +176,12 @@ class AdminPanel:
     def change_user_plan(self, user_id: int, new_plan: str) -> dict:
         """Cambia el plan de un usuario"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            conn = self._get_connection()
+            cursor = conn.cursor(buffered=True)
             cursor.execute("""
                 UPDATE usuarios 
-                SET plan = ?
-                WHERE id = ?
+                SET plan = %s
+                WHERE id = %s
             """, (new_plan, user_id))
             conn.commit()
             conn.close()
@@ -180,9 +192,9 @@ class AdminPanel:
     def block_user(self, user_id: int) -> dict:
         """Bloquea un usuario"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute("UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,))
+            conn = self._get_connection()
+            cursor = conn.cursor(buffered=True)
+            cursor.execute("UPDATE usuarios SET activo = 0 WHERE id = %s", (user_id,))
             conn.commit()
             conn.close()
             return {"success": True, "message": "✅ Usuario bloqueado"}
@@ -192,9 +204,9 @@ class AdminPanel:
     def unblock_user(self, user_id: int) -> dict:
         """Desbloquea un usuario"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute("UPDATE usuarios SET activo = 1 WHERE id = ?", (user_id,))
+            conn = self._get_connection()
+            cursor = conn.cursor(buffered=True)
+            cursor.execute("UPDATE usuarios SET activo = 1 WHERE id = %s", (user_id,))
             conn.commit()
             conn.close()
             return {"success": True, "message": "✅ Usuario desbloqueado"}
@@ -204,14 +216,14 @@ class AdminPanel:
     def delete_user(self, user_id: int) -> dict:
         """Elimina un usuario y sus análisis"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            conn = self._get_connection()
+            cursor = conn.cursor(buffered=True)
             
             # Eliminar análisis
-            cursor.execute("DELETE FROM historial_analisis WHERE user_id = ?", (user_id,))
+            cursor.execute("DELETE FROM historial_analisis WHERE user_id = %s", (user_id,))
             
             # Eliminar usuario
-            cursor.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
+            cursor.execute("DELETE FROM usuarios WHERE id = %s", (user_id,))
             
             conn.commit()
             conn.close()
@@ -221,14 +233,14 @@ class AdminPanel:
     
     def get_recent_activity(self, limit: int = 20) -> list:
         """Obtiene actividad reciente del sistema"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        conn = self._get_connection()
+        cursor = conn.cursor(buffered=True)
         cursor.execute("""
             SELECT a.fecha, u.username, a.activo, a.modo
             FROM historial_analisis a
             JOIN usuarios u ON a.user_id = u.id
             ORDER BY a.fecha DESC
-            LIMIT ?
+            LIMIT %s
         """, (limit,))
         activity = cursor.fetchall()
         conn.close()
@@ -320,8 +332,8 @@ class AdminPanel:
             
             # Tabla de uso de consultas diarias
             st.markdown("#### 📊 Uso de Consultas Hoy")
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            conn = self._get_connection()
+            cursor = conn.cursor(buffered=True)
             
             # Obtener uso de consultas por usuario hoy (UTC-5)
             cursor.execute("""
@@ -388,9 +400,9 @@ class AdminPanel:
                     continue
                 
                 # Obtener estado activo
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                cursor.execute("SELECT activo FROM usuarios WHERE id = ?", (user_id,))
+                conn = self._get_connection()
+                cursor = conn.cursor(buffered=True)
+                cursor.execute("SELECT activo FROM usuarios WHERE id = %s", (user_id,))
                 activo = cursor.fetchone()[0]
                 conn.close()
                 
@@ -410,7 +422,7 @@ class AdminPanel:
                     st.markdown(f"**Referidos:** {details['referidos_count']}")
                     if referral_code:
                         st.markdown("**Link de referido:**")
-                        st.code(f"?ref={referral_code}")
+                        st.code(f"%sref={referral_code}")
 
                     # Acciones
                     st.markdown("**Acciones:**")
