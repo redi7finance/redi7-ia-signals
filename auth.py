@@ -56,6 +56,20 @@ class AuthSystem:
             print(f"Error conectando a MySQL: {e}")
             return None
     
+    def _safe_close_cursor(self, cursor):
+        """Cierra el cursor de forma segura consumiendo resultados pendientes"""
+        try:
+            if cursor:
+                # Consumir cualquier resultado pendiente
+                try:
+                    while cursor.nextset():
+                        pass
+                except:
+                    pass
+                cursor.close()
+        except:
+            pass
+    
     def _init_database(self):
         """Inicializa las tablas de la base de datos"""
         conn = self._get_connection()
@@ -126,7 +140,7 @@ class AuthSystem:
         except Error as e:
             print(f"Error inicializando tablas: {e}")
         finally:
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
         
         self._ensure_referral_codes()
@@ -172,7 +186,7 @@ class AuthSystem:
         except Error as e:
             print(f"Error creando admin: {e}")
         finally:
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
     
     def _promover_usuarios_admin(self):
@@ -206,7 +220,7 @@ class AuthSystem:
                     print(f"⚠️ Error promoviendo {username}: {e}")
         
         conn.commit()
-        cursor.close()
+        self._safe_close_cursor(cursor)
         conn.close()
     
     def _ensure_referral_codes(self):
@@ -233,7 +247,7 @@ class AuthSystem:
         except Error as e:
             print(f"Error generando códigos de referido: {e}")
         finally:
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
     
     def _hash_password(self, password: str) -> str:
@@ -265,14 +279,14 @@ class AuthSystem:
             # Validar que no exista el usuario
             cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
             if cursor.fetchone():
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ El usuario ya existe"}
             
             # Validar que no exista el email
             cursor.execute("SELECT id FROM usuarios WHERE email = %s", (email,))
             if cursor.fetchone():
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ El email ya está registrado"}
             
@@ -280,18 +294,18 @@ class AuthSystem:
             if whatsapp:
                 cursor.execute("SELECT id FROM usuarios WHERE whatsapp = %s", (whatsapp,))
                 if cursor.fetchone():
-                    cursor.close()
+                    self._safe_close_cursor(cursor)
                     conn.close()
                     return {"success": False, "mensaje": "❌ El número de WhatsApp ya está registrado"}
             
             # Validaciones básicas
             if len(password) < 6:
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ La contraseña debe tener al menos 6 caracteres"}
             
             if len(username) < 3:
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ El usuario debe tener al menos 3 caracteres"}
             
@@ -312,7 +326,7 @@ class AuthSystem:
             """, (username, email, password_hash, nombre_completo, whatsapp, referral_code, referred_by))
             
             conn.commit()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             # Enviar email de bienvenida
@@ -366,12 +380,12 @@ class AuthSystem:
             user = cursor.fetchone()
             
             if not user:
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ Usuario o contraseña incorrectos"}
             
             if user[5] == 0:  # activo
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ Usuario inactivo. Contacta al administrador"}
             
@@ -383,7 +397,7 @@ class AuthSystem:
             """, (user[0],))
             
             conn.commit()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             return {
@@ -420,7 +434,7 @@ class AuthSystem:
             limit = self.PLAN_LIMITS.get(plan, 3)
             remaining = max(0, limit - used)
             
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             return {
@@ -431,7 +445,7 @@ class AuthSystem:
             }
         except Error as e:
             print(f"Error verificando límites: {e}")
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return {"allowed": False, "used": 0, "limit": 0, "remaining": 0}
     
@@ -453,13 +467,13 @@ class AuthSystem:
             """, (user_id, limit))
             
             historial = cursor.fetchall()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             return historial
         except Error as e:
             print(f"Error obteniendo historial: {e}")
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return []
     
@@ -479,12 +493,12 @@ class AuthSystem:
             """, (bot_token, chat_id, user_id))
             
             conn.commit()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             return {"success": True, "mensaje": "✅ Configuración guardada"}
         except Error as e:
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return {"success": False, "mensaje": f"❌ Error: {str(e)}"}
     
@@ -504,7 +518,7 @@ class AuthSystem:
             """, (user_id,))
             
             result = cursor.fetchone()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             if result and result[0] and result[1]:
@@ -517,7 +531,7 @@ class AuthSystem:
                 return {"configurado": False, "bot_token": "", "chat_id": ""}
         except Error as e:
             print(f"Error obteniendo config Telegram: {e}")
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return {"configurado": False, "bot_token": "", "chat_id": ""}
     
@@ -536,7 +550,7 @@ class AuthSystem:
             user = cursor.fetchone()
             
             if not user:
-                cursor.close()
+                self._safe_close_cursor(cursor)
                 conn.close()
                 return {"success": False, "mensaje": "❌ Email no registrado"}
             
@@ -552,7 +566,7 @@ class AuthSystem:
             """, (codigo_hash, expiry, user_id))
             
             conn.commit()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             # Enviar email
@@ -588,7 +602,7 @@ class AuthSystem:
             """, (email, codigo_hash))
             
             result = cursor.fetchone()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             if not result:
@@ -601,7 +615,7 @@ class AuthSystem:
             return True
         except Error as e:
             print(f"Error verificando código: {e}")
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return False
     
@@ -625,11 +639,11 @@ class AuthSystem:
             """, (password_hash, email))
             
             conn.commit()
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             
             return {"success": True, "mensaje": "✅ Contraseña actualizada"}
         except Error as e:
-            cursor.close()
+            self._safe_close_cursor(cursor)
             conn.close()
             return {"success": False, "mensaje": f"❌ Error: {str(e)}"}

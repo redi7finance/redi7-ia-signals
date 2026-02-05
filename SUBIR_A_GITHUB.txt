@@ -1,0 +1,52 @@
+═══════════════════════════════════════════════════════════════════
+  INSTRUCCIONES PARA SUBIR CAMBIOS A GITHUB
+═══════════════════════════════════════════════════════════════════
+
+CAMBIOS REALIZADOS:
+✅ Agregado método _safe_close_cursor() para cerrar cursores de forma segura
+✅ Todos los cursor.close() reemplazados por self._safe_close_cursor(cursor)
+✅ Esto soluciona el error "Unread result found" de MySQL de raíz
+
+═══════════════════════════════════════════════════════════════════
+
+OPCIÓN 1 - VS CODE (MÁS FÁCIL):
+════════════════════════════════
+
+1. Abre VS Code en la carpeta: redi7-ia-signals
+
+2. Presiona: Ctrl + Shift + G (Source Control)
+
+3. Verás: auth.py (modificado)
+
+4. Mensaje: "Fix: Método seguro para cerrar cursores MySQL"
+
+5. Click en: ✓ Commit
+
+6. Click en: ↑↓ Sync Changes
+
+═══════════════════════════════════════════════════════════════════
+
+OPCIÓN 2 - GITHUB DESKTOP:
+═════════════════════════════
+
+1. Abre GitHub Desktop
+
+2. Verás auth.py en Changes
+
+3. Commit message: "Fix: Método seguro para cerrar cursores MySQL"
+
+4. Click: Commit to main
+
+5. Click: Push origin
+
+═══════════════════════════════════════════════════════════════════
+
+RESULTADO ESPERADO:
+═════════════════════
+
+⏱️  Streamlit Cloud redesplegará automáticamente en ~2 minutos
+✅  El error "Unread result found" desaparecerá
+✅  Tu usuario REDI7 podrá acceder al panel admin
+✅  Datos persistentes en MySQL de Hostinger funcionando
+
+═══════════════════════════════════════════════════════════════════
