@@ -365,14 +365,15 @@ class AuthSystem:
                 cursor.execute("""
                     UPDATE usuarios 
                     SET is_admin = 1, plan = 'elite' 
-                    WHERE username = %s AND is_admin = 0
+                    WHERE username = %s
                 """, (username,))
                 conn.commit()
+                print(f"✅ Usuario {username} promovido a admin en login")
             
             password_hash = self._hash_password(password)
             
             cursor.execute("""
-                SELECT id, username, email, nombre_completo, plan, activo
+                SELECT id, username, email, nombre_completo, plan, activo, is_admin
                 FROM usuarios
                 WHERE username = %s AND password_hash = %s
             """, (username, password_hash))
@@ -408,7 +409,8 @@ class AuthSystem:
                     "username": user[1],
                     "email": user[2],
                     "nombre_completo": user[3],
-                    "plan": user[4]
+                    "plan": user[4],
+                    "is_admin": user[6]
                 }
             }
             
@@ -448,6 +450,29 @@ class AuthSystem:
             self._safe_close_cursor(cursor)
             conn.close()
             return {"allowed": False, "used": 0, "limit": 0, "remaining": 0}
+    
+    def registrar_analisis(self, user_id: int, activo: str, modo: str, temporalidad: str, resultado: str):
+        """Registra un análisis en el historial"""
+        conn = self._get_connection()
+        if not conn:
+            return False
+        
+        cursor = conn.cursor(buffered=True)
+        
+        try:
+            cursor.execute("""
+                INSERT INTO historial_analisis (user_id, activo, modo, temporalidad, resultado)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, activo, modo, temporalidad, resultado))
+            conn.commit()
+            self._safe_close_cursor(cursor)
+            conn.close()
+            return True
+        except Error as e:
+            print(f"Error registrando análisis: {e}")
+            self._safe_close_cursor(cursor)
+            conn.close()
+            return False
     
     def obtener_historial(self, user_id: int, limit: int = 10):
         """Obtiene el historial de análisis del usuario"""

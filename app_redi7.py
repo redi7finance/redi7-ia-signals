@@ -14,7 +14,6 @@ from telegram_sender import TelegramSender
 from PIL import Image
 import io
 import base64
-import sqlite3
 from temporalidades_config import get_config_temporalidades, get_num_imagenes_requeridas, get_detail_levels
 
 # Configuración de la página
@@ -367,22 +366,15 @@ def mostrar_panel_usuario():
                 mostrar_modal_upgrade()
 
         # Enlace de referido oculto para usuarios normales
-        # Solo visible en el panel de administrador
+        # Botón de administrador - verificar desde user_data
+        user_data = st.session_state.get('user_data', {})
+        is_admin = user_data.get('is_admin', 0)
         
-        try:
-            conn = sqlite3.connect("redi7_users.db")
-            cursor = conn.cursor()
-            cursor.execute("SELECT is_admin FROM usuarios WHERE id = ?", (st.session_state.user_data['id'],))
-            result = cursor.fetchone()
-            conn.close()
-
-            if result and result[0] == 1:
-                st.markdown("---")
-                if st.button("👑 Panel Administrador", width='stretch', type="primary", key="btn_admin_access"):
-                    st.session_state['show_admin_panel'] = True
-                    st.rerun()
-        except Exception as e:
-            pass  # Si no existe la columna is_admin, ignorar
+        if is_admin == 1:
+            st.markdown("---")
+            if st.button("👑 Panel Administrador", width='stretch', type="primary", key="btn_admin_access"):
+                st.session_state['show_admin_panel'] = True
+                st.rerun()
 
 # Componente de paste eliminado - causaba parpadeo
 
@@ -888,22 +880,15 @@ def main():
                     if resultado["error"]:
                         st.error(f"❌ {resultado['mensaje']}")
                     else:
-                        # Guardar en historial
+                        # Guardar en historial usando auth
                         try:
-                            conn = sqlite3.connect("redi7_users.db")
-                            cursor = conn.cursor()
-                            cursor.execute("""
-                                INSERT INTO historial_analisis (user_id, activo, modo, temporalidad, resultado)
-                                VALUES (?, ?, ?, ?, ?)
-                            """, (
+                            st.session_state.auth.registrar_analisis(
                                 st.session_state.user_data['id'],
                                 activo,
                                 modo_operacion,
                                 ', '.join(temporalidades) if isinstance(temporalidades, list) else str(temporalidades),
-                                resultado['analisis'][:1000]  # Guardar primeros 1000 caracteres
-                            ))
-                            conn.commit()
-                            conn.close()
+                                resultado['analisis'][:1000]
+                            )
                         except Exception as e:
                             print(f"Error guardando análisis: {e}")
                         
@@ -957,16 +942,8 @@ def main():
                         st.success("✅ **Análisis completado exitosamente**")
 
                         # Métricas superiores
-                        # Verificar si es admin para mostrar tokens
-                        try:
-                            conn = sqlite3.connect("redi7_users.db")
-                            cursor = conn.cursor()
-                            cursor.execute("SELECT is_admin FROM usuarios WHERE id = ?", (st.session_state.user_data['id'],))
-                            result = cursor.fetchone()
-                            conn.close()
-                            es_admin = result and result[0] == 1
-                        except:
-                            es_admin = False
+                        # Verificar si es admin desde user_data
+                        es_admin = st.session_state.user_data.get('is_admin', 0) == 1
                         
                         if es_admin:
                             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -1135,16 +1112,8 @@ def main():
             # Header del resultado
             st.success("✅ **Análisis completado exitosamente**")
 
-            # Verificar si es admin para mostrar tokens
-            try:
-                conn = sqlite3.connect("redi7_users.db")
-                cursor = conn.cursor()
-                cursor.execute("SELECT is_admin FROM usuarios WHERE id = ?", (st.session_state.user_data['id'],))
-                result = cursor.fetchone()
-                conn.close()
-                es_admin = result and result[0] == 1
-            except:
-                es_admin = False
+            # Verificar si es admin desde user_data
+            es_admin = st.session_state.user_data.get('is_admin', 0) == 1
             
             # Métricas superiores
             if es_admin:

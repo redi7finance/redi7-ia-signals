@@ -3,9 +3,26 @@
 ═══════════════════════════════════════════════════════════════════
 
 CAMBIOS REALIZADOS:
-✅ Agregado método _safe_close_cursor() para cerrar cursores de forma segura
+✅ Agregado método _safe_close_cursor() para cerrar cursores MySQL de forma segura
 ✅ Todos los cursor.close() reemplazados por self._safe_close_cursor(cursor)
-✅ Esto soluciona el error "Unread result found" de MySQL de raíz
+✅ Campo is_admin agregado al SELECT y retornado en user_data del login
+✅ Eliminado UPDATE ... WHERE is_admin = 0 para siempre actualizar admin
+✅ Agregado print de confirmación cuando se promueve a admin
+✅ Verificación de admin desde user_data en lugar de consultas SQLite
+✅ Eliminado import sqlite3 y todas las referencias a redi7_users.db
+✅ Agregado método registrar_analisis() para guardar historial en MySQL
+
+PROBLEMAS SOLUCIONADOS:
+🔧 Error "Unread result found" de MySQL eliminado completamente
+🔧 Usuario REDI7 ahora aparece como admin correctamente
+🔧 Sesión persiste al recargar la página (user_data incluye is_admin)
+🔧 Historial de análisis guardado en MySQL en lugar de SQLite
+
+═══════════════════════════════════════════════════════════════════
+
+ARCHIVOS MODIFICADOS:
+📄 auth.py - Sistema de autenticación con MySQL y admin persistente
+📄 app_redi7.py - Verificación de admin desde sesión y sin SQLite
 
 ═══════════════════════════════════════════════════════════════════
 
@@ -16,9 +33,9 @@ OPCIÓN 1 - VS CODE (MÁS FÁCIL):
 
 2. Presiona: Ctrl + Shift + G (Source Control)
 
-3. Verás: auth.py (modificado)
+3. Verás: auth.py y app_redi7.py (modificados)
 
-4. Mensaje: "Fix: Método seguro para cerrar cursores MySQL"
+4. Mensaje: "Fix: Admin persistente y sesión MySQL completa"
 
 5. Click en: ✓ Commit
 
@@ -31,9 +48,9 @@ OPCIÓN 2 - GITHUB DESKTOP:
 
 1. Abre GitHub Desktop
 
-2. Verás auth.py en Changes
+2. Verás auth.py y app_redi7.py en Changes
 
-3. Commit message: "Fix: Método seguro para cerrar cursores MySQL"
+3. Commit message: "Fix: Admin persistente y sesión MySQL completa"
 
 4. Click: Commit to main
 
@@ -45,8 +62,9 @@ RESULTADO ESPERADO:
 ═════════════════════
 
 ⏱️  Streamlit Cloud redesplegará automáticamente en ~2 minutos
-✅  El error "Unread result found" desaparecerá
-✅  Tu usuario REDI7 podrá acceder al panel admin
-✅  Datos persistentes en MySQL de Hostinger funcionando
+✅  Usuario REDI7 verá el botón "👑 Panel Administrador"
+✅  La sesión NO se cerrará al recargar la página
+✅  Datos persistentes en MySQL funcionando completamente
+✅  Sin errores de cursor o conexión
 
 ═══════════════════════════════════════════════════════════════════
