@@ -16,8 +16,8 @@ pillow>=10.2.0
 # Interface gráfica
 streamlit>=1.31.0
 
-# Base de datos (futuro)
-# sqlalchemy>=2.0.25
+# Base de datos MySQL
+mysql-connector-python>=8.0.33
 
 # Exportación de reportes (futuro)
 # reportlab>=4.0.9
