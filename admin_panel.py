@@ -141,7 +141,7 @@ class AdminPanel:
         # Estadísticas del usuario
         cursor.execute("""
                  SELECT COUNT(*), 
-                     COUNT(CASE WHEN fecha >= date('now', '-7 days') THEN 1 END)
+                     COUNT(CASE WHEN fecha >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END)
                  FROM historial_analisis WHERE user_id = %s
         """, (user_id,))
         analisis_stats = cursor.fetchone()
@@ -349,7 +349,7 @@ class AdminPanel:
                     END as limite
                 FROM usuarios u
                 LEFT JOIN historial_analisis h ON u.id = h.user_id 
-                    AND date(datetime(h.fecha, '-5 hours')) = date(datetime('now', '-5 hours'))
+                    AND DATE(h.fecha - INTERVAL 5 HOUR) = DATE(NOW() - INTERVAL 5 HOUR)
                 WHERE u.activo = 1
                 GROUP BY u.id, u.username, u.plan
                 ORDER BY consultas_hoy DESC
