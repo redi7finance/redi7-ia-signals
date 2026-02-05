@@ -63,7 +63,7 @@ class AuthSystem:
             print("⚠️ No se pudo conectar a la base de datos")
             return
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             # Tabla de usuarios
@@ -151,11 +151,13 @@ class AuthSystem:
         if not conn:
             return
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("SELECT id FROM usuarios WHERE is_admin = 1")
-            if cursor.fetchone() is None:
+            result = cursor.fetchone()
+            
+            if result is None:
                 password_hash = self._hash_password(admin_password)
                 referral_code = self._generate_referral_code(admin_username)
                 
@@ -187,7 +189,7 @@ class AuthSystem:
         if not conn:
             return
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         for username in admin_users:
             username = username.strip()
@@ -213,7 +215,7 @@ class AuthSystem:
         if not conn:
             return
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("SELECT id, username, referral_code FROM usuarios")
@@ -258,7 +260,7 @@ class AuthSystem:
             if not conn:
                 return {"success": False, "mensaje": "❌ Error de conexión a la base de datos"}
             
-            cursor = conn.cursor()
+            cursor = conn.cursor(buffered=True)
             
             # Validar que no exista el usuario
             cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
@@ -332,7 +334,7 @@ class AuthSystem:
             if not conn:
                 return {"success": False, "mensaje": "❌ Error de conexión a la base de datos"}
             
-            cursor = conn.cursor()
+            cursor = conn.cursor(buffered=True)
             
             # Verificar y promover a admin si corresponde
             import os
@@ -405,7 +407,7 @@ class AuthSystem:
         if not conn:
             return {"allowed": False, "used": 0, "limit": 0, "remaining": 0}
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             today = datetime.now().date()
@@ -439,7 +441,7 @@ class AuthSystem:
         if not conn:
             return []
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("""
@@ -467,7 +469,7 @@ class AuthSystem:
         if not conn:
             return {"success": False, "mensaje": "❌ Error de conexión"}
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("""
@@ -492,7 +494,7 @@ class AuthSystem:
         if not conn:
             return {"configurado": False, "bot_token": "", "chat_id": ""}
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("""
@@ -527,7 +529,7 @@ class AuthSystem:
         if not conn:
             return {"success": False, "mensaje": "❌ Error de conexión"}
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             cursor.execute("SELECT id, username FROM usuarios WHERE email = %s", (email,))
@@ -575,7 +577,7 @@ class AuthSystem:
         if not conn:
             return False
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             codigo_hash = self._hash_password(codigo)
@@ -612,7 +614,7 @@ class AuthSystem:
         if not conn:
             return {"success": False, "mensaje": "❌ Error de conexión"}
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         try:
             password_hash = self._hash_password(nueva_password)
